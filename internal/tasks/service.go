@@ -16,10 +16,10 @@ type TaskService interface {
 }
 
 type Service struct {
-	repo map[uuid.UUID]Task
+	repo TasksRepository
 }
 
-func NewTasksService(repo map[uuid.UUID]Task) *Service {
+func NewService(repo TasksRepository) *Service {
 	return &Service{
 		repo: repo,
 	}
@@ -28,13 +28,11 @@ func NewTasksService(repo map[uuid.UUID]Task) *Service {
 func (t *Service) createTask(title, description string) (Task, error) {
 
 	if title == "" || description == "" {
-		return Task{}, errors.New("title or description have not be empty")
+		return Task{}, errors.New("title or description should not be empty")
 	}
 
-	taskID := uuid.New()
-
 	newTask := Task{
-		ID:          taskID,
+		ID:          uuid.New(),
 		Title:       title,
 		Description: description,
 		Completed:   false,
@@ -42,25 +40,25 @@ func (t *Service) createTask(title, description string) (Task, error) {
 		UpdatedAt:   time.Now(),
 	}
 
-	t.repo[taskID] = newTask
+	t.repo.createTask(newTask)
 
 	return newTask, nil
 }
 
 func (t *Service) getTask(taskID uuid.UUID) (Task, error) {
-	task, ok := t.repo[taskID]
+	task, err := t.repo.getTaskByID(taskID)
 
-	if !ok {
-		return Task{}, errors.New("resourse is not found")
+	if err != nil {
+		return Task{}, err
 	}
 
 	return task, nil
 }
 
 func (t *Service) getAllTasks(isCompleted *bool) []Task {
-	tasks := make([]Task, 0, len(t.repo))
+	tasks := make([]Task, 0, t.repo.getLength())
 
-	for _, task := range t.repo {
+	for _, task := range t.repo.getTasks() {
 		// todo others filtres by queries
 
 		if isCompleted != nil && task.Completed != *isCompleted {
@@ -78,7 +76,7 @@ func (t *Service) updateTask(
 	completed *bool,
 ) (Task, error) {
 
-	task, err := t.getTask(taskID)
+	task, err := t.repo.getTaskByID(taskID)
 	if err != nil {
 		return Task{}, err
 	}
@@ -97,17 +95,14 @@ func (t *Service) updateTask(
 
 	task.UpdatedAt = time.Now()
 
-	t.repo[taskID] = task
+	t.repo.updateTask(task)
 	return task, nil
 }
 
 func (t *Service) deleteTask(taskID uuid.UUID) (Task, error) {
-	_, err := t.getTask(taskID)
+	err := t.repo.deleteTask(taskID)
 	if err != nil {
 		return Task{}, err
 	}
-
-	delete(t.repo, taskID)
-
 	return Task{}, nil
 }

@@ -1,10 +1,13 @@
 package tasks
 
-import "net/http"
+import (
+	"net/http"
+)
 
-func NewMuxRouter(handler TaskHandler) http.Handler {
+func RegisterRoutes(handler TaskHandler) http.Handler {
 
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("POST /task", handler.CreateTask)
 	mux.HandleFunc("GET /task/{id}", handler.GetTaskByID)
 	mux.HandleFunc("GET /tasks", handler.GetAllTasks)

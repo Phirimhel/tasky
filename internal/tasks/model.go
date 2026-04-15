@@ -15,8 +15,8 @@ type Task struct {
 	UpdatedAt   time.Time
 }
 
-func (t Task) ToResponse() taskResponse {
-	return taskResponse{
+func (t Task) ToResponse() taskResponseDTO {
+	return taskResponseDTO{
 		ID:          t.ID,
 		Title:       t.Title,
 		Description: t.Description,
@@ -27,7 +27,7 @@ func (t Task) ToResponse() taskResponse {
 }
 
 func TasksToResponse(tasks []Task) TasksResponse {
-	data := make([]taskResponse, len(tasks))
+	data := make([]taskResponseDTO, len(tasks))
 
 	for i := range tasks {
 		data[i] = tasks[i].ToResponse()

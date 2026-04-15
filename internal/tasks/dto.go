@@ -6,18 +6,18 @@ import (
 	"github.com/google/uuid"
 )
 
-type createTaskRequest struct {
+type createTaskRequestDTO struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
-type updateTaskRequest struct {
+type updateTaskRequestDTO struct {
 	Title       *string `json:"title"`
 	Description *string `json:"description"`
 	Completed   *bool   `json:"completed"`
 }
 
-type taskResponse struct {
+type taskResponseDTO struct {
 	ID          uuid.UUID `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
@@ -27,5 +27,5 @@ type taskResponse struct {
 }
 
 type TasksResponse struct {
-	Data []taskResponse `json:"data"`
+	Data []taskResponseDTO `json:"data"`
 }

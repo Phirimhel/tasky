@@ -1,8 +1,8 @@
 package main
 
 import (
-	"net/http"
 	"os"
+	httpserver "tasks-app/internal/httpServer"
 	"tasks-app/internal/tasks"
 
 	"github.com/joho/godotenv"
@@ -10,12 +10,13 @@ import (
 
 func main() {
 	godotenv.Load()
-	port := ":" + os.Getenv("PORT")
+	port := os.Getenv("PORT")
 
-	repo := tasks.NewTasksRepository()
-	service := tasks.NewTasksService(repo)
-	handler := tasks.NewTaskHandler(service)
-	router := tasks.NewMuxRouter(handler)
+	repo := tasks.NewRepository()
+	service := tasks.NewService(repo)
+	handler := tasks.NewHandler(service)
+	routes := tasks.RegisterRoutes(handler)
 
-	http.ListenAndServe(port, router)
+	server := httpserver.NewHTTPServer(routes, port)
+	server.StartServer()
 }

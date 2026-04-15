@@ -12,14 +12,11 @@ import (
 type TaskHandler interface {
 	// C
 	CreateTask(w http.ResponseWriter, r *http.Request)
-
 	// R
 	GetTaskByID(w http.ResponseWriter, r *http.Request)
 	GetAllTasks(w http.ResponseWriter, r *http.Request)
-
 	// U
 	UpdateTask(w http.ResponseWriter, r *http.Request)
-
 	// D
 	DeleteTask(w http.ResponseWriter, r *http.Request)
 }
@@ -28,13 +25,18 @@ type Handler struct {
 	Service TaskService
 }
 
-func NewTaskHandler(service TaskService) *Handler {
+func NewHandler(service TaskService) *Handler {
 	return &Handler{Service: service}
 }
 
+/*
+pattern - /task
+method - POST
+info - JSON request createTaskRequestDTO
+*/
 func (t *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
-	var req createTaskRequest
+	var req createTaskRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
 		return
@@ -50,6 +52,11 @@ func (t *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseWithJSON(w, http.StatusCreated, res)
 }
 
+/*
+pattern - /task/{id}
+method - GET
+info - pattern
+*/
 func (t *Handler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
 
 	stringTaskID := r.PathValue("id")
@@ -69,6 +76,11 @@ func (t *Handler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseWithJSON(w, http.StatusOK, res)
 }
 
+/*
+pattern - /tasks
+method - GET
+info - pattern + query params: [completed] for filter
+*/
 func (t *Handler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	queries := r.URL.Query()
 
@@ -77,7 +89,7 @@ func (t *Handler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if val := queries.Get("completed"); val != "" {
 		b, err := strconv.ParseBool(val)
 		if err != nil {
-			utils.ResponseWithError(w, http.StatusInternalServerError, err.Error())
+			utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		isCompleted = &b
@@ -88,6 +100,11 @@ func (t *Handler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseWithJSON(w, http.StatusOK, res)
 }
 
+/*
+pattern - /task/{id}
+method - UPDATE
+info - JSON request updateTaskRequestDTO
+*/
 func (t *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	idString := r.PathValue("id")
@@ -97,7 +114,7 @@ func (t *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req updateTaskRequest
+	var req updateTaskRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
 		return
@@ -118,6 +135,11 @@ func (t *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseWithJSON(w, http.StatusOK, res)
 }
 
+/*
+pattern - /task/{id}
+method - DELETE
+info - _
+*/
 func (t *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	stringTaskID := r.PathValue("id")
@@ -132,5 +154,5 @@ func (t *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		utils.ResponseWithError(w, http.StatusNotFound, err.Error())
 		return
 	}
-	utils.ResponseWithJSON(w, http.StatusNoContent, taskResponse{})
+	utils.ResponseWithJSON(w, http.StatusNoContent, taskResponseDTO{})
 }
