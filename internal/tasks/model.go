@@ -26,14 +26,14 @@ func (t Task) ToResponse() taskResponseDTO {
 	}
 }
 
-func TasksToResponse(tasks []Task) TasksResponse {
+func TasksToResponse(tasks []Task) tasksResponseDTO {
 	data := make([]taskResponseDTO, len(tasks))
 
 	for i := range tasks {
 		data[i] = tasks[i].ToResponse()
 	}
 
-	return TasksResponse{
+	return tasksResponseDTO{
 		Data: data,
 	}
 }

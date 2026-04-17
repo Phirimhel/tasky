@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/google/uuid"
 )
@@ -17,39 +18,45 @@ type TasksRepository interface {
 
 type tasksRepo struct {
 	Repo map[uuid.UUID]Task
+	mu   *sync.RWMutex
 }
 
-func NewRepository() *tasksRepo {
+func NewRepository(mutex *sync.RWMutex) *tasksRepo {
 	return &tasksRepo{
 		Repo: make(map[uuid.UUID]Task),
+		mu:   mutex,
 	}
 
 }
 
 func (t *tasksRepo) createTask(task Task) error {
-	t.Repo[task.ID] = task
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
+	t.Repo[task.ID] = task
 	return nil
 }
 
 func (t *tasksRepo) updateTask(updatedTask Task) (Task, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
-	id := updatedTask.ID
-
-	_, err := t.getTaskByID(id)
-	if err != nil {
-		return Task{}, err
+	taskID := updatedTask.ID
+	_, ok := t.Repo[taskID]
+	if !ok {
+		return Task{}, errors.New("task is not found")
 	}
 
-	t.Repo[id] = updatedTask
-
-	return t.Repo[id], nil
+	t.Repo[taskID] = updatedTask
+	return updatedTask, nil
 
 }
 
 func (t *tasksRepo) getTaskByID(taskID uuid.UUID) (Task, error) {
-	task, ok := t.Repo[taskID]
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
+	task, ok := t.Repo[taskID]
 	if !ok {
 		return Task{}, errors.New("task is not found")
 	}
@@ -58,19 +65,34 @@ func (t *tasksRepo) getTaskByID(taskID uuid.UUID) (Task, error) {
 }
 
 func (t *tasksRepo) getTasks() map[uuid.UUID]Task {
-	copy := t.Repo
-	return copy
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	copyMap := make(map[uuid.UUID]Task, len(t.Repo))
+	for _, v := range t.Repo {
+		copyMap[v.ID] = v
+	}
+	return copyMap
+
 }
 
 func (t *tasksRepo) deleteTask(taskID uuid.UUID) error {
-	_, err := t.getTaskByID(taskID)
-	if err != nil {
-		return err
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	_, ok := t.Repo[taskID]
+	if !ok {
+		return errors.New("task is not found")
 	}
+
 	delete(t.Repo, taskID)
 	return nil
 }
 
 func (t *tasksRepo) getLength() int {
-	return len(t.Repo)
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	length := len(t.Repo)
+	return length
 }

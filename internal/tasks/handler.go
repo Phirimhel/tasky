@@ -38,18 +38,28 @@ func (t *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	var req createTaskRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := req.requestValidationDTO()
+	if err != nil {
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	Task, err := t.Service.createTask(req.Title, req.Description)
 	if err != nil {
-		utils.ResponseWithError(w, http.StatusInternalServerError, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	res := Task.ToResponse()
-	utils.ResponseWithJSON(w, http.StatusCreated, res)
+	err = utils.ResponseWithJSON(w, res, http.StatusCreated)
+	if err != nil {
+		utils.ResponseWithError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 /*
@@ -62,18 +72,22 @@ func (t *Handler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
 	stringTaskID := r.PathValue("id")
 	taskID, err := uuid.Parse(stringTaskID)
 	if err != nil {
-		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	Task, err := t.Service.getTask(taskID)
 	if err != nil {
-		utils.ResponseWithError(w, http.StatusNotFound, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	res := Task.ToResponse()
-	utils.ResponseWithJSON(w, http.StatusOK, res)
+	err = utils.ResponseWithJSON(w, res, http.StatusOK)
+	if err != nil {
+		utils.ResponseWithError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 /*
@@ -89,7 +103,7 @@ func (t *Handler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if val := queries.Get("completed"); val != "" {
 		b, err := strconv.ParseBool(val)
 		if err != nil {
-			utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
+			utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		isCompleted = &b
@@ -97,7 +111,11 @@ func (t *Handler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 	tasks := t.Service.getAllTasks(isCompleted)
 	res := TasksToResponse(tasks)
-	utils.ResponseWithJSON(w, http.StatusOK, res)
+	err := utils.ResponseWithJSON(w, res, http.StatusOK)
+	if err != nil {
+		utils.ResponseWithError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 /*
@@ -110,13 +128,13 @@ func (t *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 	taksID, err := uuid.Parse(idString)
 	if err != nil {
-		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	var req updateTaskRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -127,12 +145,16 @@ func (t *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		req.Completed,
 	)
 	if err != nil {
-		utils.ResponseWithError(w, http.StatusNotFound, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	res := Task.ToResponse()
-	utils.ResponseWithJSON(w, http.StatusOK, res)
+	err = utils.ResponseWithJSON(w, res, http.StatusOK)
+	if err != nil {
+		utils.ResponseWithError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 /*
@@ -145,14 +167,19 @@ func (t *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	stringTaskID := r.PathValue("id")
 	taskID, err := uuid.Parse(stringTaskID)
 	if err != nil {
-		utils.ResponseWithError(w, http.StatusBadRequest, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	_, err = t.Service.deleteTask(taskID)
 	if err != nil {
-		utils.ResponseWithError(w, http.StatusNotFound, err.Error())
+		utils.ResponseWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	utils.ResponseWithJSON(w, http.StatusNoContent, taskResponseDTO{})
+
+	err = utils.ResponseWithJSON(w, taskResponseDTO{}, http.StatusNoContent)
+	if err != nil {
+		utils.ResponseWithError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

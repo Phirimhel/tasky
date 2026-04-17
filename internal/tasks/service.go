@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,10 +26,7 @@ func NewService(repo TasksRepository) *Service {
 
 func (t *Service) createTask(title, description string) (Task, error) {
 
-	if title == "" || description == "" {
-		return Task{}, errors.New("title or description should not be empty")
-	}
-
+	// todo add some length validations
 	newTask := Task{
 		ID:          uuid.New(),
 		Title:       title,
